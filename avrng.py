@@ -17,7 +17,7 @@ if __name__ == "__main__":
         description="True random number generator based on audio and video sources"
         )
     parser.add_argument('-a', '--audio-source', type=int, default=0)
-    parser.add_argument('-v', '--video-source')
+    parser.add_argument('-v', '--video-source', default=0)
     parser.add_argument('length', type=int, help='Length of random bytes array')
     args = parser.parse_args()
 
