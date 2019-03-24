@@ -1,4 +1,5 @@
 import argparse
+import warnings
 import numpy as np
 from video import VideoHandler
 from audio import AudioHandler
@@ -10,26 +11,29 @@ class Avrng():
         self.video_source = VideoHandler(video_source)
         self.audio_source = AudioHandler(device=int(audio_source))
         self.audio_buffer = []
+        self.frame_buffer = []
 
     def get_byte(self):
-        # TODO avrng algorithm
-        if len(self.audio_buffer) < 16:
+        if len(self.audio_buffer) < 32:
             self.audio_buffer.extend(self.audio_source.get_recording())
+        if not len(self.frame_buffer):
+            self.frame_buffer.extend(VideoHandler
+                                    .split_frame
+                                    (self.video_source.get_frame(),32))
+
         random_byte = np.uint8(0)
+        warnings.simplefilter("ignore")
         for i in range(15):
-            random_byte = (random_byte + self.audio_buffer.pop()) % 255
+            random_byte = random_byte + self.audio_buffer.pop()
         
-        frame = self.video_source.get_frame()
-        x, y = 0, 0
-        for i in range(9):
-            x += frame[98+i][148+i][i%3]
-            y += frame[98+i][148+i][(i+1)%3]
-        
-        x = x % 320
-        y = y % 200
+        frame = self.frame_buffer.pop()
+        x, y, res_y, res_x = 0, 0, len(frame), len(frame[0])
+        for i in range(15):
+            x = (x + self.audio_buffer.pop()) % res_x
+            y = (y + self.audio_buffer.pop()) % res_y
 
         for i in range(3):
-            random_byte = (random_byte + frame[y][x][i]) % 255
+            random_byte = random_byte + frame[y][x][i]
         
         return random_byte
     
