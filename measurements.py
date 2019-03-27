@@ -20,13 +20,14 @@ def hist(n):
         p[v] += 1
     return p
 
-SIZE = 10000
+SIZE = 12288
 FILENAME = 'random.bin'
 
 if __name__ == "__main__":
     trng = Avrng(0,0)
     x = np.array([trng.get_byte() for i in range(SIZE)], dtype='uint8')
-
+    trng.release()
+    
     print("Entropy: {}".format(entropy(x)))
 
     plt.figure()
@@ -53,4 +54,16 @@ if __name__ == "__main__":
     plt.bar(compression_data.keys(), compression_data.values())
     plt.title("File size")
     plt.grid(True)
+
+    with open(FILENAME + '.sha256', 'wb') as f:
+        f.write(Avrng.dump_sha256(x))
+
+    h = np.frombuffer(Avrng.dump_sha256(x), dtype='uint8')
+    print("Hash entropy: {}".format(entropy(h)))
+    plt.figure()
+    histogram2 = hist(h)
+    plt.bar(histogram2.keys(), histogram2.values(), width=1, color='g')
+    plt.title("Histogram of hashed random bytes")
+    plt.grid(True)
+
     plt.show()

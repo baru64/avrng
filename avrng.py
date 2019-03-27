@@ -1,5 +1,6 @@
 import argparse
 import warnings
+import hashlib
 import numpy as np
 from video import VideoHandler
 from audio import AudioHandler
@@ -23,22 +24,38 @@ class Avrng():
 
         random_byte = np.uint8(0)
         warnings.simplefilter("ignore")
-        for i in range(15):
-            random_byte = random_byte + self.audio_buffer.pop()
+        for i in range(16):
+            random_byte = np.bitwise_xor(random_byte, self.audio_buffer.pop())
+
         
         frame = self.frame_buffer.pop()
         x, y, res_y, res_x = 0, 0, len(frame), len(frame[0])
-        for i in range(15):
-            x = (x + self.audio_buffer.pop()) % res_x
-            y = (y + self.audio_buffer.pop()) % res_y
+        for i in range(8):
+            x = np.bitwise_xor(x, self.audio_buffer.pop()) % res_x
+            y = np.bitwise_xor(y, self.audio_buffer.pop()) % res_y
+
 
         for i in range(3):
-            random_byte = random_byte + frame[y][x][i]
+            random_byte = np.bitwise_xor(random_byte, frame[y][x][i])
         
         return random_byte
     
     def release(self):
         self.video_source.release()
+    
+    @staticmethod
+    def dump_sha256(array):
+        narray = np.array(array, dtype='uint8')
+        if (len(narray)%32.0) != 0.0:
+            return None 
+        splitted = np.split(narray, (len(narray)/32))
+        out = b''
+        for block in splitted:
+            h = hashlib.sha256()
+            h.update(block)
+            out += h.digest()
+        return out
+        
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
